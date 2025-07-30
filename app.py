@@ -5,9 +5,10 @@ import time
 
 app = Flask(__name__)
 
-DATA_DIR = r"C:\Users\fdisabatino\OneDrive - Lifeanalytics srl\Desktop\Icone\flask-campioni-demo\flask-campioni-demo\data"
-FILE_CAMPIONI = os.path.join(DATA_DIR, "campioni.xlsx")
-FILE_CODICI = r"\\server2012\SePack\Sepack Lab\COMMESSE\preparativa\codici.xlsx"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+FILE_TXT = os.path.join(DATA_DIR, "c.txt")
+FILE_CODICI = os.path.join(DATA_DIR, "codici.xlsx")
 
 
 compilazioni = []
@@ -15,20 +16,12 @@ ultimo_backup = time.time()
 hash_ultimo_salvato = ""
 
 def carica_dati():
-    FILE_TXT = r"\\server2012\SePack\Sepack Lab\COMMESSE\preparativa\c.txt"
-    
-    usecols = [ 1,2, 3, 5, 6]  # colonne da leggere nel txt
-
-    # Legge il file txt (modifica sep="\t" se serve)
+    usecols = [1, 2, 3, 5, 6]
     df_campioni = pd.read_csv(FILE_TXT, sep="\t", header=0, usecols=usecols, dtype=str)
-
     df_campioni.columns = ["ID", "Evasione", "Richiedente", "Descrizione campione", "Codice"]
-
-    # Converte la colonna 'Evasione' in data
     df_campioni["Evasione"] = pd.to_datetime(df_campioni["Evasione"], errors="coerce", dayfirst=True)
     df_campioni = df_campioni.dropna(subset=["Evasione"])
 
-    # Codici li leggi ancora dall'Excel
     df_codici = pd.read_excel(FILE_CODICI)
     df_codici["Codice"] = df_codici["Codice"].astype(str)
 
