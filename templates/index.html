@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Campioni</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #fafafa;
+            color: #333;
+        }
+        h1 {
+            color: red;
+            font-size: 3rem;
+            margin-bottom: 30px;
+            user-select: none;
+        }
+        h2 {
+            color: #222;
+            margin-bottom: 5px;
+            font-weight: 700;
+            font-size: 2rem;
+            user-select: none;
+        }
+        .campione-info {
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: black;
+            user-select: none;
+        }
+        .campione-info .descrizione {
+            color: gray;
+            font-style: italic;
+            font-weight: normal;
+            margin-top: 4px;
+        }
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        #filterSection {
+            flex: 1 1 320px;
+            max-width: 320px;
+        }
+        #filterInput {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        #campioneSelect {
+            width: 100%;
+            height: 300px;
+            padding: 5px;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: 1px solid #bbb;
+            box-sizing: border-box;
+            background: white;
+            cursor: pointer;
+        }
+        #campioneSelect option.completed {
+            background-color: #e6f4ea; /* verde chiaro */
+            color: #2e7d32; /* verde scuro testo */
+            font-weight: 700;
+        }
+        form#mainForm {
+            flex: 2 1 600px;
+            max-width: 700px;
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        .box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            margin-bottom: 15px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .box.completed {
+
+            border-color: #3c8d0d; /* verde smeraldo scuro ma brillante */
+            background-color: #c4e1b3; /* verde chiaro tenue */
+        }
+      .codice-label {
+    font-weight: 700;
+    color: #28a745; /* verde smeraldo */
+    font-size: 1.1rem;
+    padding: 15px 20px;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.codice-label em {
+    font-style: normal;
+    font-weight: 400;
+    color: black;
+    margin-left: 10px;
+    text-align: left;
+    flex-grow: 1;
+}
+
+        }
+        .codice-label::after {
+            content: "▼";
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+        .box.collapsed .codice-label::after {
+            transform: rotate(-90deg);
+        }
+        .fields-container {
+            padding: 0 20px 15px 20px;
+            display: block;
+        }
+        .box.collapsed .fields-container {
+            display: none;
+        }
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease-in-out;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: #0078d7;
+            outline: none;
+            box-shadow: 0 0 6px rgba(0,120,215,0.3);
+        }
+        #mainForm button[type="submit"] {
+            background-color: transparent;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            width: 100%;
+            transition: background-color 0.3s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        #mainForm button[type="submit"] span.icon {
+            font-size: 1.5rem;
+            line-height: 1;
+            border: none;
+            outline: none;
+        }
+        .alert-missing {
+            background-color: #ffe6e6;
+            border: 1px solid #ff4d4d;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-weight: 600;
+            color: #a70000;
+            max-width: 700px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Preparativa</h1>
+
+    <div class="container">
+        <section id="filterSection">
+            <label for="filterInput">Filtra campioni:</label>
+            <input type="text" id="filterInput" placeholder="Digita per filtrare..." autocomplete="off" />
+
+            <form method="get" action="/" id="selectForm" aria-label="Seleziona campione">
+                <label for="campioneSelect">Seleziona ID campione:</label>
+                <select name="selected_id" id="campioneSelect" size="10" aria-label="Seleziona campione">
+                    {% for id in unique_ids %}
+                        <option value="{{ id }}"
+                            {% if id == selected_id %}selected{% endif %}
+                            {% if id in completed_samples %}class="completed"{% endif %}>
+                            {{ id }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            {% if codici_mancanti %}
+            <div class="alert-missing" role="alert">
+                <strong>Attenzione!</strong> I seguenti codici associati al campione <em>{{ selected_id }}</em> non sono presenti nel file codici.xlsx:
+                <ul>
+                    {% for codice in codici_mancanti %}
+                        <li>{{ codice }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </section>
+
+        {% if selected_id %}
+        <form method="post" action="?selected_id={{ selected_id }}" id="mainForm" aria-label="Form di inserimento dati campione">
+            <h2>{{ selected_id }}</h2>
+            <div class="campione-info" role="region" aria-live="polite" style="position: relative; overflow: visible;">
+    <!-- Icona in alto a destra -->
+    <img src="{{ url_for('static', filename='img/pika.png') }}"
+         alt="Icona campione"
+         style="
+             position: absolute;
+             top: -195px;
+             right: -50px;
+             height: 100px;
+             z-index: 10;
+         ">
+
+    <div><strong>{{ campione_info.evasione }}</strong> - <strong>{{ campione_info.richiedente }}</strong></div>
+    <div class="descrizione">{{ campione_info.descrizione }}</div>
+</div>
+
+
+            {% for item in tipologie_info %}
+                <div class="box collapsed" data-tipologia="{{ item.tipologia }}">
+                    <h3 class="codice-label" tabindex="0">{{ item.tipologia }}: <em>{{ item.descrizione }}</em></h3>
+                    <div class="fields-container">
+                        {% for campo in item.campi %}
+                            {% set campo_id = "campo__" ~ selected_id ~ "__" ~ item.tipologia ~ "__" ~ campo.nome %}
+                            <label for="{{ campo_id }}">{{ campo.nome }}:</label>
+                            {% if campo.tipo == 'input' %}
+                                <input type="text"
+                                    id="{{ campo_id }}"
+                                    name="{{ campo_id }}"
+                                    value="{{ risultati[item.tipologia][campo.nome] if item.tipologia in risultati and campo.nome in risultati[item.tipologia] else '' }}" />
+                            {% elif campo.tipo == 'select' %}
+                                <select
+                                    id="{{ campo_id }}"
+                                    name="{{ campo_id }}">
+                                    <option value="">-- Seleziona --</option>
+                                    {% for opzione in campo.opzioni %}
+                                        {% set selected = 'selected' if item.tipologia in risultati and campo.nome in risultati[item.tipologia] and risultati[item.tipologia][campo.nome] == opzione else '' %}
+                                        <option value="{{ opzione }}" {{ selected }}>{{ opzione }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+            <button type="submit" aria-label="Salva tutti i dati per il campione"><span class="icon">💾</span> Salva</button>
+        </form>
+        {% endif %}
+    </div>
+<script>
+    let formChanged = false;
+
+    // rileva modifiche al form
+    document.querySelectorAll('#mainForm input, #mainForm select').forEach(el => {
+        el.addEventListener('input', () => {
+            formChanged = true;
+            checkCompletion();
+        });
+    });
+
+    // reset flag dopo il submit
+    document.getElementById('mainForm')?.addEventListener('submit', () => {
+        formChanged = false;
+    });
+
+    // filtro campioni
+    document.getElementById('filterInput').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const options = document.getElementById('campioneSelect').options;
+        for(let i = 0; i < options.length; i++) {
+            const txt = options[i].text.toLowerCase();
+            options[i].style.display = txt.includes(filter) ? '' : 'none';
+        }
+    });
+
+    // click su opzione select con controllo salvataggio
+    const campioneSelect = document.getElementById('campioneSelect');
+    campioneSelect.addEventListener('change', function(e) {
+    const newValue = this.value;
+    if (newValue !== "{{ selected_id }}") {
+        if (formChanged) {
+            const conferma = confirm("Hai modificato dei dati ma non hai salvato.\nVuoi salvare prima di continuare?");
+            if (conferma) {
+                const form = document.getElementById('mainForm');
+                // Rimuovo eventuali redirect_to precedenti
+                const oldHidden = form.querySelector('input[name=\"redirect_to\"]');
+                if (oldHidden) form.removeChild(oldHidden);
+                // Creo input hidden redirect_to
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'redirect_to';
+                hidden.value = newValue;
+                form.appendChild(hidden);
+                form.submit();
+            } else {
+                // Cambia la pagina senza salvare
+                window.location.href = "/?selected_id=" + encodeURIComponent(newValue);
+            }
+        } else {
+            // Nessuna modifica da salvare, cambio pagina diretto
+            window.location.href = "/?selected_id=" + encodeURIComponent(newValue);
+        }
+    }
+});
+
+
+    // toggle collassa/espandi per ogni tipologia
+    document.querySelectorAll('.codice-label').forEach(label => {
+        label.addEventListener('click', () => {
+            const box = label.parentElement;
+            box.classList.toggle('collapsed');
+        });
+        label.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                label.click();
+            }
+        });
+    });
+
+    // funzione per controllare se ogni box è completato (tutti campi non vuoti)
+    function checkCompletion() {
+        document.querySelectorAll('.box').forEach(box => {
+            const inputs = box.querySelectorAll('input, select');
+            let allFilled = true;
+            inputs.forEach(input => {
+                if (!input.value.trim()) allFilled = false;
+            });
+            if (allFilled) {
+                box.classList.add('completed');
+            } else {
+                box.classList.remove('completed');
+            }
+        });
+    }
+
+    // Iniziale controllo completion dopo caricamento pagina
+    window.addEventListener('load', checkCompletion);
+</script>
+</body>
+</html>
